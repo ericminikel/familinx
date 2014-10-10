@@ -10,3 +10,13 @@ and      yc.Byear > -1 and yc.Dyear > -1 -- can't compute age of death if either
 and      yp.Byear > -1 and yp.Dyear > -1
 into outfile '/humgen/atgu1/fs03/eminikel/039famil/parent-child-pairs.txt'
 ;
+
+-- query to just get year of birth, year of death and age of death for everyone possible
+select   y.Byear yob, -- year of birth
+         y.Dyear yod, -- year of death
+         (y.Dyear - y.Byear) ad -- age of death
+from     years y
+where    y.Byear > -1
+and      y.Dyear > -1
+into outfile '/humgen/atgu1/fs03/eminikel/039famil/yob-yod-ad.txt'
+;
