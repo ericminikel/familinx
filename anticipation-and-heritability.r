@@ -74,6 +74,7 @@ dev.off()
 life_expectancy_by_yod = sqldf("
 select   yod, avg(ad) mean_ad
 from     ppl
+where    yod < 2010 -- remove noise from years > 2009 which have very low N
 group by 1
 order by 1
 ;")
