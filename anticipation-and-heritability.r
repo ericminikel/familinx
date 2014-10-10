@@ -14,16 +14,17 @@ pc = pc[error_free_pairs,] # remove the errors
 t.test(pc$parent_ad, pc$child_ad, paired=TRUE, alternative='two.sided')
 
 anticipation_vs_min_age = data.frame(min_age_of_death=integer(0),anticipation=numeric(0),p=numeric(0))
-for (min_age_of_death in 0:80) {
-    subset = pc$child_ad >= min_age_of_death & pc$parent_ad >= min_age_of_death
+for (min_age_of_death in 0:80) { # for every possible minimum age threshold, 0 to 80
+    subset = pc$child_ad >= min_age_of_death & pc$parent_ad >= min_age_of_death # only include pairs where both survived to minimum age
     t_test_result = t.test(pc$parent_ad[subset], pc$child_ad[subset], paired=TRUE, alternative='two.sided')
     anticipation = as.numeric(t_test_result$estimate) # mean paired difference
-    p = as.numeric(t_test_result$p.value)
+    p = as.numeric(t_test_result$p.value) # p value for there being a difference
     anticipation_vs_min_age = rbind(anticipation_vs_min_age, c(min_age_of_death,anticipation,p))
 }
 colnames(anticipation_vs_min_age) = c('min_age_of_death','anticipation','p')
 
 # plot how the "anticipation" signal changes depending on the minimum age you set to include pairs in the analysis
+png('anticipation-vs-minage.png',width=750,height=500)
 plot(NA,NA,xlim=c(0,80),ylim=c(-2,14),xaxs='i',yaxs='i',axes=FALSE,
     xlab='Minimum age of death for inclusion',
     ylab='Paired difference between ages of death',
@@ -35,7 +36,8 @@ abline(h=0,col='#777777',lwd=3)
 abline(h=c(5,10),col='#777777')
 text(x=0,y=.5,pos=4,label='Parent lives longer than child',col='#777777')
 text(x=0,y=-.5,pos=4,label='Child lives longer than parent',col='#777777')
-points(anticipation_vs_min_age$min_age_of_death, anticipation_vs_min_age$anticipation,type='l',lwd=5,col='red')
+points(anticipation_vs_min_age$min_age_of_death, anticipation_vs_min_age$anticipation,type='l',lwd=10,col='#8E2323')
+dev.off()
 
 # all people ("ppl") with year of birth and death
 ppl = read.table('/humgen/atgu1/fs03/eminikel/039famil/yob-yod-ad.txt',header=FALSE,sep='\t')
@@ -50,23 +52,47 @@ ppl = ppl[error_free_ppl,] # remove the errors
 m = lm(ppl$ad ~ ppl$yob)
 summary(m)
 
-life_expectancy_by_year = sqldf("
+life_expectancy_by_yob = sqldf("
 select   yob, avg(ad) mean_ad
 from     ppl
 group by 1
 order by 1
 ;")
 
-plot(NA,NA,xlim=c(1800,2014),ylim=c(0,120),xaxs='i',yaxs='i',axes=FALSE,
+png('yob-ad-plot.png',width=750,height=500)
+plot(NA,NA,xlim=c(1850,2014),ylim=c(0,85),xaxs='i',yaxs='i',axes=FALSE,
     xlab='Year of birth',
     ylab='Mean age of death',
-    main='')
-axis(side=1,at=c(1800,1850,1900,1950,2000,2014),labels=c(1800,1850,1900,1950,2000,2014),lwd=0,lwd.ticks=1,cex.axis=.8)
-axis(side=2,at=(0:6)*20,labels=(0:6)*20,lwd=0,lwd.ticks=1,cex.axis=.8,las=1)
-points(life_expectancy_by_year$yob,life_expectancy_by_year$mean_ad,type='l',lwd=5,col='#FF9912')
+    main='Mean age of death by year of birth')
+axis(side=1,at=c(1850,1900,1950,2000,2014),labels=c(1850,1900,1950,2000,2014),lwd=0,lwd.ticks=1,cex.axis=.8)
+axis(side=2,at=(0:4)*20,labels=(0:4)*20,lwd=0,lwd.ticks=1,cex.axis=.8,las=1)
+abline(h=0,col='#777777',lwd=3)
+points(life_expectancy_by_yob$yob,life_expectancy_by_yob$mean_ad,type='l',lwd=10,col='#FF9912')
+dev.off()
+
+
+life_expectancy_by_yod = sqldf("
+select   yod, avg(ad) mean_ad
+from     ppl
+group by 1
+order by 1
+;")
+
+
+png('yod-ad-plot.png',width=750,height=500)
+plot(NA,NA,xlim=c(1850,2014),ylim=c(0,85),xaxs='i',yaxs='i',axes=FALSE,
+    xlab='Year of death',
+    ylab='Mean age of death',
+    main='Mean age of death by year of death')
+axis(side=1,at=c(1850,1900,1950,2000,2014),labels=c(1850,1900,1950,2000,2014),lwd=0,lwd.ticks=1,cex.axis=.8)
+axis(side=2,at=(0:4)*20,labels=(0:4)*20,lwd=0,lwd.ticks=1,cex.axis=.8,las=1)
+abline(h=0,col='#777777',lwd=3)
+points(life_expectancy_by_yod$yod,life_expectancy_by_yod$mean_ad,type='l',lwd=10,col='#7B7922')
+dev.off()
 
 
 # correlation between parent and child year of birth
+cor.test(pc$child_yob,pc$parent_yob)
 m = lm(pc$child_yob ~ pc$parent_yob)
 summary(m)
 
